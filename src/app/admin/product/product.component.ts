@@ -4,6 +4,9 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import * as _ from 'lodash';
 import { ModalDirective } from 'ngx-bootstrap';
 import { productData } from 'src/app/ccmart/data/products';
+import { AlertController, ToastController } from '@ionic/angular';
+import { DecimalPipe } from '@angular/common';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-mu-product',
@@ -16,9 +19,13 @@ export class ProductComponent implements OnInit {
   temp: Array<IProduct> = [];
   thucDon: Array<IProduct> = [];
   searchBox = '';
+  moment = moment;
   @ViewChild('confirmModal') confirmModal: ModalDirective;
   constructor(
-    private mainService: MainService
+    private mainService: MainService,
+    private alertController: AlertController,
+    private _decimalPipe: DecimalPipe,
+    private toastController: ToastController
   ) { }
 
   ngOnInit() {
@@ -28,6 +35,15 @@ export class ProductComponent implements OnInit {
 
   getProductImage(product: IProduct) {
     return product.IMAGE_URL ? product.IMAGE_URL : '/assets/img/logo.jpg';
+  }
+  getButtonState(sp: IProduct) {
+    const idx = _.findIndex(this.thucDon, (s: IProduct) => {
+      return sp.ID === s.ID;
+    });
+    if (idx > -1) {
+      return 'ĐÃ THÊM';
+    }
+    return 'THÊM';
   }
   updateFilter() {
     const val = this.searchBox.toUpperCase();
@@ -52,23 +68,52 @@ export class ProductComponent implements OnInit {
     this.thucDon.push(sp);
   }
 
-  hoanThanhThucDon() {
-    this.confirmModal.show();
-  }
-  hideConfirmPopup() {
-    this.confirmModal.hide();
+  async hoanThanhThucDon() {
+    let message = '<p>Bạn chắc chắn muốn tạo thực đơn cho ngày hôm nay?</p>';
+    this.thucDon.forEach((pro: IProduct, idx: number) => {
+      message += '<p>' + (idx + 1) + '. ' + pro.NAME +
+        ' - Giá bán: ' + this._decimalPipe.transform(pro.GIA_THEO_NGAY) + ' VNĐ - SL: ' + pro.SL_THEO_NGAY + ' (' + pro.TYPE + ')' + '</p>';
+    });
+    const alert = await this.alertController.create({
+      header: 'Chú ý',
+      subHeader: '',
+      message: message,
+      cssClass: 'big-alert',
+      mode: 'ios',
+      buttons: [
+        {
+          text: 'Không',
+          role: 'Không',
+          cssClass: 'secondary',
+          handler: () => { }
+        }, {
+          text: 'Ok',
+          handler: () => {
+            this.taoThucDon();
+          }
+        }]
+    });
+    await alert.present();
   }
   taoThucDon() {
-    this.hideConfirmPopup();
     this.mainService.taoThucDon(JSON.stringify(this.thucDon))
       .subscribe(
         data => {
           console.log(data);
+          this.thucDon = [];
+          this.taoThucDonToast();
         },
         error => {
           console.log(error);
         }
       );
+  }
+  async taoThucDonToast() {
+    const toast = await this.toastController.create({
+      message: 'Thực đơn đã được tạo',
+      duration: 5000
+    });
+    toast.present();
   }
 
 }

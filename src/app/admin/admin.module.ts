@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { SharedModule } from './../share.module';
 import { AdminRoutingModule } from './admin.routing';
 import { NgModule } from '@angular/core';
@@ -9,6 +10,9 @@ import { AdminComponent } from './admin.component';
     imports: [
       AdminRoutingModule,
       SharedModule
+    ],
+    providers: [
+      DecimalPipe
     ]
 })
 export class AdminModule { }

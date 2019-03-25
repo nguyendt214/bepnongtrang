@@ -4,6 +4,8 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { tap, catchError } from 'rxjs/operators';
+import { IProduct } from './model/product';
+import 'rxjs/add/observable/of';
 
 const API_URL = environment.mu_api;
 @Injectable({
@@ -11,8 +13,42 @@ const API_URL = environment.mu_api;
 })
 export class MainService {
   users: Array<IUser>;
-
+  products: Array<IProduct>;
   constructor(private httpClient: HttpClient) { }
+  getProducts(): Observable<Array<IProduct>> {
+    if (this.products) {
+      return Observable.of(this.products);
+    }
+    const url = API_URL + 'getProducts';
+    return this.httpClient
+    .get<Array<IProduct>>(url)
+    .pipe(
+      tap(
+        list => {
+          this.products = list;
+          return this.products;
+        },
+        () => catchError(this.handleError)
+      )
+    );
+  }
+  getUsers(): Observable<Array<IUser>> {
+    if (this.users) {
+      return Observable.of(this.users);
+    }
+    const url = API_URL + 'getUsers';
+    return this.httpClient
+    .get<Array<IUser>>(url)
+    .pipe(
+      tap(
+        list => {
+          this.users = list;
+          return this.users;
+        },
+        () => catchError(this.handleError)
+      )
+    );
+  }
   getInfo(): Observable<Array<any>> {
     const url = API_URL + 'getInfo';
     return this.httpClient
